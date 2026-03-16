@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hex Pro AI</title>
+    <style>
+        body { background: #0a0a14; color: white; text-align: center; font-family: sans-serif; }
+        canvas { background: #111; border: 2px solid #444; margin-top: 20px; box-shadow: 0 0 20px rgba(0,212,255,0.2); }
+        #status { font-size: 24px; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div style="margin-top:20px;">RED (YOU): Top-Bottom | BLUE (AI): Left-Right</div>
+    <canvas id="hexCanvas"></canvas>
+    <div id="status">YOUR TURN</div>
+    <script>
+        const canvas = document.getElementById('hexCanvas');
+        const ctx = canvas.getContext('2d');
+        const SIZE = 7; const RADIUS = 35;
+        let board = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+        let gameOver = false;
+        canvas.width = 800; canvas.height = 600;
+
+        function getXY(r, c) {
+            return { x: 180 + c*61 + r*30, y: 120 + r*52 };
+        }
+
+        function draw() {
+            ctx.clearRect(0,0,800,600);
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    const {x, y} = getXY(r,c);
+                    ctx.beginPath();
+                    for(let i=0; i<6; i++) ctx.lineTo(x+RADIUS*Math.cos(i*Math.PI/3), y+RADIUS*Math.sin(i*Math.PI/3));
+                    ctx.closePath();
+                    ctx.fillStyle = board[r][c] == 1 ? "#ff4b4b" : (board[r][c] == 2 ? "#00d4ff" : "#222");
+                    if(board[r][c] != 0) { ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle; }
+                    ctx.fill(); ctx.strokeStyle = "#444"; ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        canvas.onclick = (e) => {
+            if(gameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    const {x, y} = getXY(r,c);
+                    if(Math.hypot(mx-x, my-y) < RADIUS) {
+                        if(board[r][c] == 0) {
+                            board[r][c] = 1; draw();
+                            document.getElementById('status').innerText = "AI THINKING...";
+                            setTimeout(aiMove, 500);
+                        }
+                    }
+                }
+            }
+        };
+
+        function aiMove() {
+            let empty = [];
+            for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) if(board[r][c]==0) empty.push({r,c});
+            if(empty.length > 0) {
+                let m = empty[Math.floor(Math.random()*empty.length)];
+                board[m.r][m.c] = 2; draw();
+                document.getElementById('status').innerText = "YOUR TURN";
+            }
+        }
+        draw();
+    </script>
+</body>
+</html>
